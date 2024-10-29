@@ -1,90 +1,65 @@
-"use client"
-import { useState } from 'react';
+'use client';
+// pages/index.tsx
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
-const items = [
-    { type: 'Fruit', name: 'Apple' },
-    { type: 'Vegetable', name: 'Broccoli' },
-    { type: 'Vegetable', name: 'Mushroom' },
-    { type: 'Fruit', name: 'Banana' },
-    { type: 'Vegetable', name: 'Tomato' },
-    { type: 'Fruit', name: 'Orange' },
-    { type: 'Fruit', name: 'Mango' },
-    { type: 'Fruit', name: 'Pineapple' },
-    { type: 'Vegetable', name: 'Cucumber' },
-    { type: 'Fruit', name: 'Watermelon' },
-    { type: 'Vegetable', name: 'Carrot' },
-];
+type TransformedData = {
+    [department: string]: {
+        male: number;
+        female: number;
+        ageRange: string;
+        hair: { [color: string]: number };
+        addressUser: { [fullName: string]: string };
+    };
+};
 
 export default function TodoList() {
-    const [availableItems, setAvailableItems] = useState(items);
-    const [selectedItems, setSelectedItems] = useState({
-        Fruit: [],
-        Vegetable: []
-    });
+    const [data, setData] = useState<TransformedData | null>(null);
 
-    const handleSelect = (item) => {
-        setAvailableItems((prev) => prev.filter((i) => i.name !== item.name));
-        setSelectedItems((prev) => ({
-            ...prev,
-            [item.type]: [...prev[item.type], item]
-        }));
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await axios.get('/api/users');
+                setData(response.data);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        };
+        fetchData();
+    }, []);
 
-        setTimeout(() => {
-            handleDeselect(item);
-        }, 5000);
-    };
-
-    const handleDeselect = (item) => {
-        setSelectedItems((prev) => ({
-            ...prev,
-            [item.type]: prev[item.type].filter((i) => i.name !== item.name)
-        }));
-        setAvailableItems((prev) => [...prev, item]);
-    };
+    if (!data) return <p>Loading...</p>;
 
     return (
         <div>
-            <h2>Todo List</h2>
-            <div style={{ display: 'flex', gap: '2rem' }}>
-                <div>
-                    <h3>Available Items</h3>
+            <h1>Department Data</h1>
+            {Object.keys(data).map((department) => (
+                <div key={department}>
+                    <div className="flex bg-rose-500">
+                        department <h2 className="ml-2">{department}</h2>
+                    </div>
+                    <p>Male: {data[department].male}</p>
+                    <p>Female: {data[department].female}</p>
+                    <p>Age Range: {data[department].ageRange}</p>
+                    <h3>Hair Colors</h3>
                     <ul>
-                        {availableItems.map((item, index) => (
-                            <li
-                                key={`${item.name}-${item.type}-${index}`}
-                                onClick={() => handleSelect(item)}
-                                style={{cursor: 'pointer'}}
-                            >
-                                {item.name}
+                        {Object.entries(data[department].hair).map(([color, count]) => (
+                            <li key={color}>
+                                {color}: {count}
                             </li>
                         ))}
                     </ul>
-                </div>
-
-                {/*Vegetable */}
-                <div>
-                    <h3>Vegetables</h3>
+                    <h3>Address Users</h3>
                     <ul>
-                        {selectedItems.Vegetable.map((item) => (
-                            <li key={item.name} onClick={() => handleDeselect(item)} style={{ cursor: 'pointer' }}>
-                                {item.name}
+                        {Object.entries(data[department].addressUser).map(([name, postalCode]) => (
+                            <li key={name}>
+                                {name}: {postalCode}
                             </li>
                         ))}
                     </ul>
+                    ---------------------
                 </div>
-
-                {/*  Fruit */}
-                <div>
-                    <h3>Fruits</h3>
-                    <ul>
-                        {selectedItems.Fruit.map((item) => (
-                            <li key={item.name} onClick={() => handleDeselect(item)} style={{ cursor: 'pointer' }}>
-                                {item.name}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </div>
+            ))}
         </div>
     );
 }
